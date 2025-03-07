@@ -1,1 +1,5 @@
 target/
+deployment/mysql/data/
+.next/
+*.bundle
+*.psd
