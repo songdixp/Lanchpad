@@ -1,0 +1,6 @@
+# c2n-fe/.gitignore
+
+node_modules/
+.env
+.next/
+
