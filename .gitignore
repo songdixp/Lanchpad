@@ -1,1 +1,3 @@
 *.bundle
+c2n-be/deployment/mysql/data/
+c2n-be/portal-api/target/
