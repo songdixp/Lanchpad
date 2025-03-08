@@ -190,32 +190,38 @@ contract FarmingC2N is Ownable {
             pool.lastRewardTimestamp = lastTimestamp;
             return;
         }
-
-        uint256 nrOfSeconds = lastTimestamp-pool.lastRewardTimestamp;
-        // 这段时间要分配的代币数 = 从上一次奖励到现在经历的时间 * 每秒分配的代币数 * 当前池子的权重
+        // 上一次更新时间到最新的奖励时间
+        uint256 nrOfSeconds = lastTimestamp - pool.lastRewardTimestamp;
+        // 这段时间要分配的代币数 = 从上一次奖励到现在，经历的时间 * 每秒分配的代币数 * 当前池子的权重
         uint256 erc20Reward = nrOfSeconds * rewardPerSecond * pool.allocPoint / totalAllocPoint;
         // 单位token累计奖励代币数 = 当前池子累计的奖励数量 + 新增时间分配代币数/总的LP数，
-        pool.accERC20PerShare = pool.accERC20PerShare + erc20Reward*1e36/lpSupply;
+        pool.accERC20PerShare = pool.accERC20PerShare + erc20Reward * 1e36 / lpSupply;
+        // 记录当前流动池奖励被更新的时间
         pool.lastRewardTimestamp = block.timestamp;
     }
 
     // Deposit LP tokens to Farm for ERC20 allocation.
+    // 质押自己代币的方法
     function deposit(uint256 _pid, uint256 _amount) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
 
+        // 充值的时候也会更新代币池的信息
         updatePool(_pid);
 
+        // 充值的时候历史上有余额了，会把带分发的奖励分给用户
         if (user.amount > 0) {
-            uint256 pendingAmount = user.amount*pool.accERC20PerShare/1e36-user.rewardDebt;
+            // 用户余额* 单位token分配的奖励数量 - 历史已经分配的奖励数量 = 用户待分发的奖励数量
+            uint256 pendingAmount = user.amount * pool.accERC20PerShare / 1e36 - user.rewardDebt;
             erc20Transfer(msg.sender, pendingAmount);
         }
-
+        // safe方法是要检查对方的地址是不是智能合约，并且会调用接收方的onERC20Received 回调方法确认，这个合约能处理代币。
+        // 也就是说，1检查是否是合约，2 检查合约是否能处理代币
         pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
-        pool.totalDeposits = pool.totalDeposits+_amount;
+        pool.totalDeposits = pool.totalDeposits + _amount;
 
-        user.amount = user.amount+_amount;
-        user.rewardDebt = user.amount*pool.accERC20PerShare/1e36;
+        user.amount = user.amount + _amount;
+        user.rewardDebt = user.amount * pool.accERC20PerShare / 1e36;
         emit Deposit(msg.sender, _pid, _amount);
     }
 
