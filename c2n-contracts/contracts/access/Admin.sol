@@ -23,11 +23,9 @@ contract Admin {
         }
     }
 
-    function addAdmin(
-        address _adminAddress
-    )
-    external
-    onlyAdmin
+    function addAdmin(address _adminAddress)
+        external
+        onlyAdmin
     {
         // Can't add 0x address as an admin
         require(_adminAddress != address(0x0), "[RBAC] : Admin must be != than 0x0 address");
@@ -39,11 +37,9 @@ contract Admin {
         isAdmin[_adminAddress] = true;
     }
 
-    function removeAdmin(
-        address _adminAddress
-    )
-    external
-    onlyAdmin
+    function removeAdmin(address _adminAddress)
+        external
+        onlyAdmin
     {
         // Admin has to exist
         require(isAdmin[_adminAddress]);
@@ -68,9 +64,9 @@ contract Admin {
 
     // Fetch all admins
     function getAllAdmins()
-    external
-    view
-    returns (address [] memory)
+        external
+        view
+        returns (address [] memory)
     {
         return admins;
     }

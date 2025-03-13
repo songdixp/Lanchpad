@@ -230,28 +230,31 @@ contract FarmingC2N is Ownable {
     function withdraw(uint256 _pid, uint256 _amount) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        require(user.amount >= _amount, "withdraw: can't withdraw more than deposit");
+        require(_amount <= user.amount, "withdraw: can't withdraw more than deposit");
         updatePool(_pid);
 
         // 计算奖励
-        uint256 pendingAmount = user.amount*pool.accERC20PerShare/1e36-user.rewardDebt;
-
+        uint256 pendingAmount = user.amount * pool.accERC20PerShare / 1e36 - user.rewardDebt;
+        // 先把当前未发放的奖励发送出来
         erc20Transfer(msg.sender, pendingAmount);
-        user.amount = user.amount-_amount;
-        user.rewardDebt = user.amount*pool.accERC20PerShare/1e36;
+        // 更新用户的代币余额
+        user.amount = user.amount - _amount;
+        // 更新用户的质押奖励数量
+        user.rewardDebt = user.amount * pool.accERC20PerShare / 1e36;
         // 撤回流动性
         pool.lpToken.safeTransfer(address(msg.sender), _amount);
-        pool.totalDeposits = pool.totalDeposits-_amount;
+        pool.totalDeposits = pool.totalDeposits - _amount;
 
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
+    // 紧急撤回，不关心奖励
     function emergencyWithdraw(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         pool.lpToken.safeTransfer(address(msg.sender), user.amount);
-        pool.totalDeposits = pool.totalDeposits-user.amount;
+        pool.totalDeposits = pool.totalDeposits - user.amount;
         emit EmergencyWithdraw(msg.sender, _pid, user.amount);
         user.amount = 0;
         user.rewardDebt = 0;

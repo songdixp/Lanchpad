@@ -4,7 +4,11 @@ pragma solidity ^0.8.0;
 import "../interfaces/IAdmin.sol";
 import "./C2NSale.sol";
 
-
+/**
+工厂合约
+通过deploySale方法来构建合约，传入管理员地址，和分配质押的协议，设置合约是否是通过工厂生成的属性
+可以判断合约类型
+*/ 
 contract SalesFactory {
 
     IAdmin public admin;
@@ -39,8 +43,8 @@ contract SalesFactory {
 
 
     function deploySale()
-    external
-    onlyAdmin
+        external
+        onlyAdmin
     {
         C2NSale sale = new C2NSale(address(admin), allocationStaking);
 
@@ -51,7 +55,10 @@ contract SalesFactory {
     }
 
     // Function to return number of pools deployed
-    function getNumberOfSalesDeployed() external view returns (uint) {
+    function getNumberOfSalesDeployed() 
+        external view 
+        returns (uint) 
+    {
         return allSales.length;
     }
 

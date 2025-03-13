@@ -22,72 +22,80 @@ contract C2NSale {
     IAdmin public admin;
 
     struct Sale {
-        // Token being sold
+        // 代币地址
         IERC20 token;
-        // Is sale created
+        // Is sale created 售卖已创建
         bool isCreated;
-        // Are earnings withdrawn
+        // Are earnings withdrawn 项目方是否已经提取了eth
         bool earningsWithdrawn;
-        // Is leftover withdrawn
+        // Is leftover withdrawn 项目方是否已经取回剩余未售出代币
         bool leftoverWithdrawn;
-        // Have tokens been deposited
+        // Have tokens been deposited 代币生成事件已经发生
         bool tokensDeposited;
-        // Address of sale owner
+
+        // Address of sale owner 项目方地址
         address saleOwner;
-        // Price of the token quoted in ETH
+        // Price of the token quoted in ETH 项目币单价
         uint256 tokenPriceInETH;
-        // Amount of tokens to sell
+        // Amount of tokens to sell 即将售卖项目币数量
         uint256 amountOfTokensToSell;
-        // Total tokens being sold
+        // Total tokens being sold 已售出项目币数量
         uint256 totalTokensSold;
-        // Total ETH Raised
+        // Total ETH Raised 获得的eth
         uint256 totalETHRaised;
-        // Sale start time
+        // Sale start time 售卖开始时间
         uint256 saleStart;
-        // Sale end time
+        // Sale end time 售卖结束时间
         uint256 saleEnd;
-        // When tokens can be withdrawn
+        // When tokens can be withdrawn 代币可以提取时间
         uint256 tokensUnlockTime;
-        // maxParticipation
+        // maxParticipation 最大参与投资人数量    
         uint256 maxParticipation;
     }
 
-    // Participation structure
+    // Participation structure 每一个投资人的购买属性
     struct Participation {
+        // 购买代币数量
         uint256 amountBought;
+        // 支付的eth数量
         uint256 amountETHPaid;
+        // 售卖参与时间
         uint256 timeParticipated;
+        // 分批是否提取，每一个时间分片上是否提取了代币
         bool[] isPortionWithdrawn;
     }
 
+    // 注册的基础属性
     struct Registration {
         uint256 registrationTimeStarts;
         uint256 registrationTimeEnds;
         uint256 numberOfRegistrants;
     }
 
-    // Sale
+    // Sale 售卖信息 全局唯一
     Sale public sale;
-    // Registration
+    // Registration 注册信息 全局唯一 
     Registration public registration;
     // Number of users participated in the sale.
     uint256 public numberOfParticipants;
-    // Mapping user to his participation
+    // Mapping user to his participation 投资人购买信息
     mapping(address => Participation) public userToParticipation;
     // Mapping if user is registered or not
     mapping(address => bool) public isRegistered;
     // mapping if user is participated or not
     mapping(address => bool) public isParticipated;
-    // Times when portions are getting unlocked
+    // Times when portions are getting unlocked 分批解锁计划，计划结束之后，投资者不同的时间段之内，投资者可以提取的比例
     uint256[] public vestingPortionsUnlockTime;
     // Percent of the participation user can withdraw
+    // 每一个时间分片上可以提取的比例
     uint256[] public vestingPercentPerPortion;
     //Precision for percent for portion vesting
+    // 总的分发比例
     uint256 public portionVestingPrecision;
     // Max vesting time shift
     uint256 public maxVestingTimeShift;
 
-    // Restricting calls only to sale owner
+    // Restricting calls only to sale owner 权限管理
     modifier onlySaleOwner() {
         require(msg.sender == sale.saleOwner, "OnlySaleOwner:: Restricted");
         _;
@@ -120,6 +128,7 @@ contract C2NSale {
     );
 
     // Constructor, always initialized through SalesFactory
+    // 管理员和分配质押的协议
     constructor(address _admin, address _allocationStaking) {
         require(_admin != address(0));
         require(_allocationStaking != address(0));
@@ -128,7 +137,8 @@ contract C2NSale {
         allocationStakingContract = IAllocationStaking(_allocationStaking);
     }
 
-    /// @notice         Function to set vesting params
+    /// @notice         Function to set vesting params 设置分发计划
+    // 代币解锁之后，不同的时间段内，可以分别提取的代币数量
     function setVestingParams(
         uint256[] memory _unlockingTimes,
         uint256[] memory _percents,
@@ -155,7 +165,9 @@ contract C2NSale {
 
         require(sum == portionVestingPrecision, "Percent distribution issue.");
     }
-
+    /**
+    设置解锁时间的偏移量
+    */ 
     function shiftVestingUnlockingTimes(uint256 timeToShift)
     external
     onlyAdmin
@@ -174,6 +186,9 @@ contract C2NSale {
     }
 
     /// @notice     Admin function to set sale parameters
+     /**
+    设置销售基础的属性
+    */ 
     function setSaleParams(
         address _token,
         address _saleOwner,
@@ -223,11 +238,12 @@ contract C2NSale {
     // @notice     Function to retroactively set sale token address, can be called only once,
     //             after initial contract creation has passed. Added as an options for teams which
     //             are not having token at the moment of sale launch.
-    function setSaleToken(
-        address saleToken
-    )
-    external
-    onlyAdmin
+      /**
+    设置售卖的币种
+    */ 
+    function setSaleToken(address saleToken)
+        external
+        onlyAdmin
     {
         require(address(sale.token) == address(0));
         sale.token = IERC20(saleToken);
@@ -235,10 +251,12 @@ contract C2NSale {
 
 
     /// @notice     Function to set registration period parameters
-    function setRegistrationTime(
-        uint256 _registrationTimeStarts,
-        uint256 _registrationTimeEnds
-    ) external onlyAdmin {
+      /**
+    设置投资者注册时间
+    */ 
+    function setRegistrationTime(uint256 _registrationTimeStarts,uint256 _registrationTimeEnds) 
+        external onlyAdmin 
+    {
         require(sale.isCreated);
         require(registration.registrationTimeStarts == 0);
         require(
@@ -260,9 +278,12 @@ contract C2NSale {
         );
     }
 
-    function setSaleStart(
-        uint256 starTime
-    ) external onlyAdmin {
+    /**
+    设置售卖开始时间
+    */ 
+    function setSaleStart(uint256 starTime) 
+        external onlyAdmin 
+    {
         require(sale.isCreated, "sale is not created.");
         require(sale.saleStart == 0, "setSaleStart: starTime is set already.");
         require(starTime > registration.registrationTimeEnds, "start time should greater than registrationTimeEnds.");
@@ -276,8 +297,16 @@ contract C2NSale {
 
     /// @notice     Registration for sale.
     /// @param      signature is the message signed by the backend
+      /**
+      重要方法
+    投资者注册销售方案的方法
+    checkRegistrationSignature 方法，投资者注册对应的投资方案的时候，需要得到链下管理员的加签
+    通常配合KYC过程进行，在本工程中只是简单的演示这个过程，通过线下进行加签，链上验签
+    投资者需要选择自己购买的销售方案，管理员需要把这一次他的销售行为进行认可，为了确保认可不被篡改，就需要进行加签。
+    链上验签，得到的就是恢复出来的加签用户，一定要等于当前管理员，这样保证了签名没有被篡改。
+    */ 
     function registerForSale(bytes memory signature, uint256 pid)
-    external
+        external
     {
         require(
             block.timestamp >= registration.registrationTimeStarts &&
@@ -310,7 +339,8 @@ contract C2NSale {
     /// @notice     Admin function, to update token price before sale to match the closest $ desired rate.
     /// @dev        This will be updated with an oracle during the sale every N minutes, so the users will always
     ///             pay initialy set $ value of the token. This is to reduce reliance on the ETH volatility.
-    function updateTokenPriceInETH(uint256 price) external onlyAdmin {
+    function updateTokenPriceInETH(uint256 price) external onlyAdmin 
+    {
         require(price > 0, "Price can not be 0.");
         // Allowing oracle to run and change the sale value
         sale.tokenPriceInETH = price;
@@ -318,7 +348,9 @@ contract C2NSale {
     }
 
     /// @notice     Admin function to postpone the sale
-    function postponeSale(uint256 timeToShift) external onlyAdmin {
+    function postponeSale(uint256 timeToShift) 
+        external onlyAdmin 
+    {
         require(
             block.timestamp < sale.saleStart,
             "sale already started."
@@ -332,7 +364,9 @@ contract C2NSale {
     }
 
     /// @notice     Function to extend registration period
-    function extendRegistrationPeriod(uint256 timeToAdd) external onlyAdmin {
+    function extendRegistrationPeriod(uint256 timeToAdd) 
+        external onlyAdmin 
+    {
         require(
             registration.registrationTimeEnds+timeToAdd <
             sale.saleStart,
@@ -344,8 +378,7 @@ contract C2NSale {
 
     /// @notice     Admin function to set max participation before sale start
     function setCap(uint256 cap)
-    external
-    onlyAdmin
+        external onlyAdmin
     {
         require(
             block.timestamp < sale.saleStart,
@@ -360,7 +393,12 @@ contract C2NSale {
     }
 
     // Function for owner to deposit tokens, can be called only once.
-    function depositTokens() external onlySaleOwner {
+    /**
+    项目方存入代币，代币生成事件
+    */ 
+    function depositTokens() 
+        external onlySaleOwner 
+    {
         require(
             !sale.tokensDeposited, "Deposit can be done only once"
         );
@@ -375,10 +413,12 @@ contract C2NSale {
     }
 
     // Function to participate in the sales
-    function participate(
-        bytes memory signature,
-        uint256 amount
-    ) external payable {
+    /**
+    投资方参与购买代币的过程
+    */ 
+    function participate(bytes memory signature,uint256 amount) 
+        external payable 
+    {
 
         require(
             amount <= sale.maxParticipation,
@@ -386,12 +426,14 @@ contract C2NSale {
         );
 
         // User must have registered for the round in advance
+        
         require(
             isRegistered[msg.sender],
             "Not registered for this sale."
         );
 
         // Verify the signature
+        // 需要管理员在线下进行加签
         require(
             checkParticipationSignature(
                 signature,
@@ -455,7 +497,11 @@ contract C2NSale {
     }
 
     /// Users can claim their participation
-    function withdrawTokens(uint256 portionId) external {
+    /**
+    投资人代币生成解锁之后可以分批次的提取代币
+    */ 
+    function withdrawTokens(uint256 portionId) external 
+    {
         require(
             block.timestamp >= sale.tokensUnlockTime,
             "Tokens can not be withdrawn yet."
@@ -467,12 +513,16 @@ contract C2NSale {
 
         Participation storage p = userToParticipation[msg.sender];
 
-        if (
-            !p.isPortionWithdrawn[portionId] &&
-        vestingPortionsUnlockTime[portionId] <= block.timestamp
-        ) {
+        if (!p.isPortionWithdrawn[portionId] &&
+            vestingPortionsUnlockTime[portionId] <= block.timestamp) 
+        {
             p.isPortionWithdrawn[portionId] = true;
-            uint256 amountWithdrawing = p.amountBought*vestingPercentPerPortion[portionId]/portionVestingPrecision;
+            /**
+            根据比例计算可以提取的代币数量
+            例如 [100, 200, 200] 第一批次就是 100/500, 第二批次就是 200/500, 第三批次就是 200/500
+            这样能控制我们分批次提取代币的速度
+            */ 
+            uint256 amountWithdrawing = p.amountBought * vestingPercentPerPortion[portionId] / portionVestingPrecision;
 
             // Withdraw percent which is unlocked at that portion
             if (amountWithdrawing > 0) {
@@ -485,7 +535,14 @@ contract C2NSale {
     }
 
     // Expose function where user can withdraw multiple unlocked portions at once.
-    function withdrawMultiplePortions(uint256 [] calldata portionIds) external {
+    /**
+    如果可以批量提取，则使用for循环提取
+    一共三个阶段[100, 200, 200]
+    假设当前时间过了第二个阶段了, 第一个批次100， 第二个批次200，就可以一次性提取出来
+    */ 
+    function withdrawMultiplePortions(uint256 [] calldata portionIds) 
+        external 
+    {
         uint256 totalToWithdraw = 0;
 
         Participation storage p = userToParticipation[msg.sender];
@@ -518,6 +575,9 @@ contract C2NSale {
     }
 
     /// Function to withdraw all the earnings and the leftover of the sale contract.
+    /**
+    项目方提取所有收益和剩余的代币
+    */ 
     function withdrawEarningsAndLeftover() external onlySaleOwner {
         withdrawEarningsInternal();
         withdrawLeftoverInternal();
@@ -567,10 +627,12 @@ contract C2NSale {
     /// @notice     Check signature user submits for registration.
     /// @param      signature is the message signed by the trusted entity (backend)
     /// @param      user is the address of user which is registering for sale
-    function checkRegistrationSignature(
-        bytes memory signature,
-        address user
-    ) public view returns (bool) {
+    /**
+    验证投资人注册销售方案的签名
+    */ 
+    function checkRegistrationSignature(bytes memory signature, address user) 
+        public view returns (bool) 
+    {
         bytes32 hash = keccak256(
             abi.encodePacked(user, address(this))
         );
@@ -579,11 +641,9 @@ contract C2NSale {
     }
 
     // Function to check if admin was the message signer
-    function checkParticipationSignature(
-        bytes memory signature,
-        address user,
-        uint256 amount
-    ) public view returns (bool) {
+    function checkParticipationSignature(bytes memory signature,address user,uint256 amount) 
+        public view returns (bool) 
+    {
         return
         admin.isAdmin(
             getParticipationSigner(
@@ -598,11 +658,9 @@ contract C2NSale {
     /// @param      signature is the message allowing user to participate in sale
     /// @param      user is the address of user for which we're signing the message
     /// @param      amount is the maximal amount of tokens user can buy
-    function getParticipationSigner(
-        bytes memory signature,
-        address user,
-        uint256 amount
-    ) public view returns (address) {
+    function getParticipationSigner(bytes memory signature, address user, uint256 amount) 
+        public view returns (address) 
+    {
         bytes32 hash = keccak256(
             abi.encodePacked(
                 user,
@@ -616,34 +674,30 @@ contract C2NSale {
 
     /// @notice     Function to get participation for passed user address
     function getParticipation(address _user)
-    external
-    view
-    returns (
-        uint256,
-        uint256,
-        uint256,
-        bool[] memory
-    )
+        external
+        view
+    returns (uint256, uint256, uint256,bool[] memory)
     {
         Participation memory p = userToParticipation[_user];
         return (
-        p.amountBought,
-        p.amountETHPaid,
-        p.timeParticipated,
-        p.isPortionWithdrawn
+            p.amountBought,
+            p.amountETHPaid,
+            p.timeParticipated,
+            p.isPortionWithdrawn
         );
     }
 
     /// @notice     Function to get number of registered users for sale
-    function getNumberOfRegisteredUsers() external view returns (uint256) {
+    function getNumberOfRegisteredUsers() 
+        external view returns (uint256) 
+    {
         return registration.numberOfRegistrants;
     }
 
     /// @notice     Function to get all info about vesting.
     function getVestingInfo()
-    external
-    view
-    returns (uint256[] memory, uint256[] memory)
+        external view
+        returns (uint256[] memory, uint256[] memory)
     {
         return (vestingPortionsUnlockTime, vestingPercentPerPortion);
     }
