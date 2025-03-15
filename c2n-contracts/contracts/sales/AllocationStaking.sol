@@ -26,7 +26,9 @@ contract AllocationStaking is OwnableUpgradeable{
         //   2. User receives the pending reward sent to his/her address.
         //   3. User's `amount` gets updated.
         //   4. User's `rewardDebt` gets updated.
+        // 代币解锁事件，用户参与代币购买，则会锁定用户质押的代币
         uint256 tokensUnlockTime; // If user registered for sale, returns when tokens are getting unlocked
+        // 用户注册过的销售方案
         address [] salesRegistered;
     }
 
@@ -70,10 +72,12 @@ contract AllocationStaking is OwnableUpgradeable{
 
     // Restricting calls to only verified sales
     modifier onlyVerifiedSales {
+        // 校验调用者地址是 saleFactory 工厂创建的
         require(salesFactory.isSaleCreatedThroughFactory(msg.sender), "Sale not created through factory.");
         _;
     }
-
+    // 相比Farm合约，allocation 没有构造函数，而是使用的initialize来替代
+    // 因为allocationStaking使用的是代理模式, 代理模式会调用initialize来进行初始化
     function initialize(
         IERC20 _erc20,
         uint256 _rewardPerSecond,

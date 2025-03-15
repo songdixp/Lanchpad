@@ -6,7 +6,7 @@ import "./C2NSale.sol";
 
 /**
 工厂合约
-通过deploySale方法来构建合约，传入管理员地址，和分配质押的协议，设置合约是否是通过工厂生成的属性
+通过deploySale方法来构建sales合约，传入管理员地址，和分配质押的协议，设置合约是否是通过工厂生成的属性
 可以判断合约类型
 */ 
 contract SalesFactory {
@@ -45,15 +45,18 @@ contract SalesFactory {
     function deploySale()
         external
         onlyAdmin
-    {
+    {   
+        // 传入管理员地址，加上分配质押的合约地址
         C2NSale sale = new C2NSale(address(admin), allocationStaking);
-
+        // 设置 sales合约是否是通过工厂来进行创建的，必要的时候判断合约类型
         isSaleCreatedThroughFactory[address(sale)] = true;
         allSales.push(address(sale));
 
         emit SaleDeployed(address(sale));
     }
-
+    /**
+    下面的get 方法是获取部署成功的 sales 合约
+    */ 
     // Function to return number of pools deployed
     function getNumberOfSalesDeployed() 
         external view 
