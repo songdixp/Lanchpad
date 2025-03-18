@@ -79,12 +79,13 @@ contract AllocationStaking is OwnableUpgradeable{
     // 相比Farm合约，allocation 没有构造函数，而是使用的initialize来替代
     // 因为allocationStaking使用的是代理模式, 代理模式会调用initialize来进行初始化
     function initialize(
-        IERC20 _erc20,
-        uint256 _rewardPerSecond,
-        uint256 _startTimestamp,
-        address _salesFactory
-    ) initializer
-    public
+            IERC20 _erc20,
+            uint256 _rewardPerSecond,
+            uint256 _startTimestamp,
+            address _salesFactory
+        ) 
+        initializer
+        public
     {
         __Ownable_init(_msgSender());
 
@@ -97,7 +98,9 @@ contract AllocationStaking is OwnableUpgradeable{
     }
 
     // Function where owner can set sales factory in case of upgrading some of smart-contracts
-    function setSalesFactory(address _salesFactory) external onlyOwner {
+    function setSalesFactory(address _salesFactory) 
+        external onlyOwner 
+    {
         require(_salesFactory != address(0));
         salesFactory = ISalesFactory(_salesFactory);
     }
@@ -111,8 +114,8 @@ contract AllocationStaking is OwnableUpgradeable{
     function fund(uint256 _amount) public {
         require(block.timestamp < endTimestamp, "fund: too late, the farm is closed");
         erc20.safeTransferFrom(address(msg.sender), address(this), _amount);
-        endTimestamp += _amount/rewardPerSecond;
-        totalRewards = totalRewards+_amount;
+        endTimestamp += _amount / rewardPerSecond;
+        totalRewards = totalRewards + _amount;
     }
 
     // Add a new lp to the pool. Can only be called by the owner.
@@ -125,13 +128,14 @@ contract AllocationStaking is OwnableUpgradeable{
         totalAllocPoint = totalAllocPoint+_allocPoint;
         // Push new PoolInfo
         poolInfo.push(
-            PoolInfo({
-        lpToken : _lpToken,
-        allocPoint : _allocPoint,
-        lastRewardTimestamp : lastRewardTimestamp,
-        accERC20PerShare : 0,
-        totalDeposits : 0
-        })
+            PoolInfo(
+            {
+                lpToken : _lpToken,
+                allocPoint : _allocPoint,
+                lastRewardTimestamp : lastRewardTimestamp,
+                accERC20PerShare : 0,
+                totalDeposits : 0
+            })
         );
     }
 
@@ -188,8 +192,15 @@ contract AllocationStaking is OwnableUpgradeable{
             updatePool(pid);
         }
     }
-
-    function setTokensUnlockTime(uint256 _pid, address _user, uint256 _tokensUnlockTime) external onlyVerifiedSales {
+    /**
+    相比 FramC2N 来将，多了这个方法，理解这个方法，需要结合 C2NSales 一起看
+    当用户调用 C2NSales 里面的 registerForSale 方法时，注册销售方案，会调用这个合约中的 setTokensUnlockTime 方法
+    这个方法就是将 投资者 的代币池中的代币，锁定到销售结束之后。
+    当然，这个方法存在前置校验 modifier onlyVerifiedSales, 这个校验会查看调用者的地址是不是工厂合约创建的
+    */ 
+    function setTokensUnlockTime(uint256 _pid, address _user, uint256 _tokensUnlockTime) 
+        external onlyVerifiedSales 
+    {
         UserInfo storage user = userInfo[_pid][_user];
         // Require that tokens are currently unlocked
         require(user.tokensUnlockTime <= block.timestamp);
@@ -295,11 +306,11 @@ contract AllocationStaking is OwnableUpgradeable{
         // Update pool
         updatePool(_pid);
 
-        uint256 pendingAmount = user.amount*pool.accERC20PerShare/1e36-user.rewardDebt;
+        uint256 pendingAmount = user.amount * pool.accERC20PerShare / 1e36 - user.rewardDebt;
 
         // Increase amount user is staking
-        user.amount = user.amount+pendingAmount;
-        user.rewardDebt = user.amount*pool.accERC20PerShare/1e36;
+        user.amount = user.amount + pendingAmount;
+        user.rewardDebt = user.amount * pool.accERC20PerShare / 1e36;
 
         // Increase pool's total deposits
         pool.totalDeposits = pool.totalDeposits+pendingAmount;
@@ -331,9 +342,9 @@ contract AllocationStaking is OwnableUpgradeable{
 
     // Function to fetch deposits and earnings at one call for multiple users for passed pool id.
     function getPendingAndDepositedForUsers(address [] memory users, uint pid)
-    external
-    view
-    returns (uint256 [] memory, uint256 [] memory)
+        external
+        view
+        returns (uint256 [] memory, uint256 [] memory)
     {
         uint256 [] memory deposits = new uint256[](users.length);
         uint256 [] memory earnings = new uint256[](users.length);

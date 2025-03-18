@@ -30,6 +30,7 @@ contract SalesFactory {
         _;
     }
 
+    // 部署默认的allocationStaking合约地址是 ZERO_ADDRESS 0x00... 地址
     constructor (address _adminContract, address _allocationStaking)  {
         admin = IAdmin(_adminContract);
         allocationStaking = _allocationStaking;
@@ -46,14 +47,16 @@ contract SalesFactory {
         external
         onlyAdmin
     {   
-        // 传入管理员地址，加上分配质押的合约地址
+        // 传入管理员地址，加上分配质押的合约地址，得到一个销售方案的合约
+        // 使用合约实例化，是因为不知道 C2N的合约地址是多少，得先进行部署到链上
         C2NSale sale = new C2NSale(address(admin), allocationStaking);
-        // 设置 sales合约是否是通过工厂来进行创建的，必要的时候判断合约类型
+        // 设置 sales 合约是否是通过工厂来进行创建的，必要的时候判断合约类型
         isSaleCreatedThroughFactory[address(sale)] = true;
         allSales.push(address(sale));
 
         emit SaleDeployed(address(sale));
     }
+
     /**
     下面的get 方法是获取部署成功的 sales 合约
     */ 

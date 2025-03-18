@@ -140,10 +140,12 @@ contract C2NSale {
     /// @notice         Function to set vesting params 设置分发计划
     // 代币解锁之后，不同的时间段内，可以分别提取的代币数量
     function setVestingParams(
-        uint256[] memory _unlockingTimes,
-        uint256[] memory _percents,
-        uint256 _maxVestingTimeShift
-    ) external onlyAdmin {
+            uint256[] memory _unlockingTimes,
+            uint256[] memory _percents,
+            uint256 _maxVestingTimeShift
+        ) 
+        external onlyAdmin 
+    {
         require(
             vestingPercentPerPortion.length == 0 &&
             vestingPortionsUnlockTime.length == 0
@@ -169,8 +171,8 @@ contract C2NSale {
     设置解锁时间的偏移量
     */ 
     function shiftVestingUnlockingTimes(uint256 timeToShift)
-    external
-    onlyAdmin
+        external
+        onlyAdmin
     {
         require(
             timeToShift > 0 && timeToShift < maxVestingTimeShift,
@@ -198,7 +200,8 @@ contract C2NSale {
         uint256 _tokensUnlockTime,
         uint256 _portionVestingPrecision,
         uint256 _maxParticipation
-    ) external onlyAdmin {
+    ) external onlyAdmin 
+    {
         require(!sale.isCreated, "setSaleParams: Sale is already created.");
         require(
             _saleOwner != address(0),
@@ -297,8 +300,8 @@ contract C2NSale {
 
     /// @notice     Registration for sale.
     /// @param      signature is the message signed by the backend
-      /**
-      重要方法
+    /**
+    重要方法
     投资者注册销售方案的方法
     checkRegistrationSignature 方法，投资者注册对应的投资方案的时候，需要得到链下管理员的加签
     通常配合KYC过程进行，在本工程中只是简单的演示这个过程，通过线下进行加签，链上验签
@@ -644,14 +647,10 @@ contract C2NSale {
     function checkParticipationSignature(bytes memory signature,address user,uint256 amount) 
         public view returns (bool) 
     {
-        return
-        admin.isAdmin(
-            getParticipationSigner(
-                signature,
-                user,
-                amount
-            )
+        return admin.isAdmin(
+            getParticipationSigner(signature, user,amount)
         );
+        
     }
 
     /// @notice     Check who signed the message

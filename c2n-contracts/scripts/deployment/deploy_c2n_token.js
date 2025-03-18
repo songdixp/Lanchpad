@@ -11,7 +11,10 @@ async function main() {
   const totalSupply =  (1_000_000_000n * 10n**18n).toString(); 
 
   const decimals = 18;
-
+  /**
+   * getContractFactory：这个方法通常用于准备部署新的合约实例。
+   * 它会编译<给定名称>的合约，并准备好一个工厂对象(C2N)，你可以用它来调用deploy方法并部署新的合约到区块链上。
+   * */ 
   const C2N = await hre.ethers.getContractFactory("C2NToken");
   //构造时初始化一定数量的C2N代币
   const token = await C2N.deploy(tokenName, symbol, totalSupply, decimals);

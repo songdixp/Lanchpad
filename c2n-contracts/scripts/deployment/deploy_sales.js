@@ -13,7 +13,9 @@ async function main() {
   const contracts = getSavedContractAddresses()[hre.network.name];
   const config = require("../configs/saleConfig.json");
   const c = config[hre.network.name];
-
+  // getContractAt：这个方法用于获取已经部署在区块链上的合约实例。
+  // 你需要提供合约的名字（或ABI）以及该合约的部署地址。
+  // 这适用于当你知道合约已经在链上存在并且你想要与之交互的情况。
   const salesFactory = await hre.ethers.getContractAt(
     "SalesFactory",
     contracts["SalesFactory"]
