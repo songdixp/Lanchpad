@@ -210,15 +210,20 @@ contract AllocationStaking is OwnableUpgradeable{
     }
 
     // Update reward variables of the given pool to be up-to-date.
+    /**
+    1 更新每代币应获得的奖励（累计时间 Accumulated)
+    2 更新上次提取奖励的时间
+    */ 
     function updatePool(uint256 _pid) public {
+        
         PoolInfo storage pool = poolInfo[_pid];
-
+        // 判断当前时间是否是 小于结束时间
         uint256 lastTimestamp = block.timestamp < endTimestamp ? block.timestamp : endTimestamp;
-
+        // 如果上一次的时间小于 上一次的领取奖励的时间
         if (lastTimestamp <= pool.lastRewardTimestamp) {
             lastTimestamp = pool.lastRewardTimestamp;
         }
-
+        // 代币池的供应总量
         uint256 lpSupply = pool.totalDeposits;
 
         if (lpSupply == 0) {
@@ -226,11 +231,11 @@ contract AllocationStaking is OwnableUpgradeable{
             return;
         }
 
-        uint256 nrOfSeconds = lastTimestamp-pool.lastRewardTimestamp;
-        uint256 erc20Reward = nrOfSeconds*rewardPerSecond*pool.allocPoint/totalAllocPoint;
+        uint256 nrOfSeconds = lastTimestamp - pool.lastRewardTimestamp;
+        uint256 erc20Reward = nrOfSeconds * rewardPerSecond * pool.allocPoint / totalAllocPoint;
 
         // Update pool accERC20PerShare
-        pool.accERC20PerShare = pool.accERC20PerShare+erc20Reward*1e36/lpSupply;
+        pool.accERC20PerShare = pool.accERC20PerShare + erc20Reward * 1e36 / lpSupply;
 
         // Update pool lastRewardTimestamp
         pool.lastRewardTimestamp = lastTimestamp;
@@ -276,19 +281,19 @@ contract AllocationStaking is OwnableUpgradeable{
         updatePool(_pid);
 
         // Compute user's pending amount
-        uint256 pendingAmount = user.amount*pool.accERC20PerShare/1e36-user.rewardDebt;
+        uint256 pendingAmount = user.amount * pool.accERC20PerShare / 1e36 - user.rewardDebt;
 
         // Transfer pending amount to user
         erc20Transfer(msg.sender, pendingAmount);
-        user.amount = user.amount-_amount;
-        user.rewardDebt = user.amount*pool.accERC20PerShare/1e36;
+        user.amount = user.amount - _amount;
+        user.rewardDebt = user.amount * pool.accERC20PerShare / 1e36;
 
         // Transfer withdrawal amount to user
         pool.lpToken.safeTransfer(address(msg.sender), _amount);
         pool.totalDeposits = pool.totalDeposits-_amount;
 
         if (_amount > 0) {
-            // Reset the tokens unlock time
+            // 如果用户提取了代币，那么会设置 解锁时间为 0 。
             user.tokensUnlockTime = 0;
         }
 
