@@ -302,23 +302,24 @@ contract AllocationStaking is OwnableUpgradeable{
     }
 
     // Function to compound earnings into deposit
+    // 将用户的质押奖励金额转移到充值金额中，也就是质押金额
     function compound(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
 
         require(user.amount >= 0, "User does not have anything staked.");
 
-        // Update pool
+        // 更新每代币应获得的奖励，也就是拿到最新的 accERC20PerShare
         updatePool(_pid);
-
+        // 计算待奖励的金额
         uint256 pendingAmount = user.amount * pool.accERC20PerShare / 1e36 - user.rewardDebt;
 
-        // Increase amount user is staking
+        // 直接加到用户质押数量中，用户代币数量更新之后，奖励债务也要同步更新，因为和用户代币数量相关的变量
         user.amount = user.amount + pendingAmount;
         user.rewardDebt = user.amount * pool.accERC20PerShare / 1e36;
 
         // Increase pool's total deposits
-        pool.totalDeposits = pool.totalDeposits+pendingAmount;
+        pool.totalDeposits = pool.totalDeposits + pendingAmount;
         emit CompoundedEarnings(msg.sender, _pid, pendingAmount, user.amount);
     }
 
@@ -346,6 +347,9 @@ contract AllocationStaking is OwnableUpgradeable{
     }
 
     // Function to fetch deposits and earnings at one call for multiple users for passed pool id.
+    /**
+    批量获取用户质押奖励数量、代币数量
+    */ 
     function getPendingAndDepositedForUsers(address [] memory users, uint pid)
         external
         view
